@@ -11,18 +11,16 @@ const client = new vision.ImageAnnotatorClient({
 });
 
 export const config = {
-  api: {
-    bodyParser: false
-  }
+  api: { bodyParser: false }
 };
 
 export default function handler(req, res) {
-  // ✅ CORS fix
+  // ✅ CORS‑headers
   res.setHeader("Access-Control-Allow-Origin", "https://fsfsfsfs18.github.io");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // ✅ Preflight request (OPTIONS)
+  // ✅ Preflight‑check
   if (req.method === "OPTIONS") {
     res.status(200).end();
     return;
@@ -35,7 +33,7 @@ export default function handler(req, res) {
 
   upload.single("image")(req, {}, async (err) => {
     if (err) {
-      console.error(err);
+      console.error("Upload error:", err);
       res.status(500).json({ error: "Upload failed" });
       return;
     }
@@ -46,7 +44,7 @@ export default function handler(req, res) {
       const text = detections.length ? detections[0].description : "";
       res.status(200).json({ text });
     } catch (e) {
-      console.error(e);
+      console.error("Vision API error:", e);
       res.status(500).json({ error: "OCR failed" });
     }
   });
