@@ -7,7 +7,7 @@ export const config = {
 };
 
 export default function handler(req, res) {
-  // CORS voor GitHub Pages
+  // CORS voor jouw GitHub Pages
   res.setHeader("Access-Control-Allow-Origin", "https://fsfsfsfs18.github.io");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -30,10 +30,8 @@ export default function handler(req, res) {
     }
 
     try {
-      // Blob → base64
       const base64 = req.file.buffer.toString("base64");
 
-      // Vision REST API call
       const response = await fetch(
         `https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_API_KEY}`,
         {
@@ -51,13 +49,14 @@ export default function handler(req, res) {
       );
 
       const data = await response.json();
+      console.log("Vision raw response:", JSON.stringify(data, null, 2));
 
       const text =
         data.responses?.[0]?.fullTextAnnotation?.text ||
         data.responses?.[0]?.textAnnotations?.[0]?.description ||
         "";
 
-      res.status(200).json({ text });
+      res.status(200).json({ text: (text || "").trim() });
     } catch (e) {
       console.error("Vision API error:", e);
       res.status(500).json({ error: "OCR failed" });
