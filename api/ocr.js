@@ -7,26 +7,18 @@ export const config = {
 };
 
 export default function handler(req, res) {
-  // CORS voor jouw GitHub Pages
+  // CORS naar jouw GitHub Pages
   res.setHeader("Access-Control-Allow-Origin", "https://fsfsfsfs18.github.io");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    res.status(200).end();
-    return;
-  }
-
-  if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed" });
-    return;
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   upload.single("image")(req, {}, async (err) => {
     if (err) {
       console.error("Upload error:", err);
-      res.status(500).json({ error: "Upload failed" });
-      return;
+      return res.status(500).json({ error: "Upload failed" });
     }
 
     try {
@@ -51,15 +43,28 @@ export default function handler(req, res) {
       const data = await response.json();
       console.log("Vision raw response:", JSON.stringify(data, null, 2));
 
-      const text =
+      const rawText =
         data.responses?.[0]?.fullTextAnnotation?.text ||
         data.responses?.[0]?.textAnnotations?.[0]?.description ||
         "";
 
-      res.status(200).json({ text: (text || "").trim() });
+      const flat = (rawText || "").replace(/\s+/g, " ").trim();
+
+      // simpele patronen: 1 letter + 8 cijfers (lot) en dd/mm/yyyy (datum)
+      const lotMatch = flat.match(/[A-Z]\d{8}/);
+      const dateMatch = flat.match(/\b\d{2}\/\d{2}\/\d{4}\b/);
+
+      const lotNumber = lotMatch ? lotMatch[0] : null;
+      const date = dateMatch ? dateMatch[0] : null;
+
+      return res.status(200).json({
+        rawText,
+        lotNumber,
+        date
+      });
     } catch (e) {
       console.error("Vision API error:", e);
-      res.status(500).json({ error: "OCR failed" });
+      return res.status(500).json({ error: "OCR failed" });
     }
   });
 }
