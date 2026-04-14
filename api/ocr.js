@@ -4,7 +4,10 @@ import multer from "multer";
 const upload = multer();
 
 const client = new vision.ImageAnnotatorClient({
-  keyFilename: "./key.json"
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY
+  }
 });
 
 export const config = {
