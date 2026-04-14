@@ -1,0 +1,11 @@
+{
+  "name": "lotchecker-serverless",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'no build step'"
+  },
+  "dependencies": {
+    "@google-cloud/vision": "^4.3.1",
+    "multer": "^1.4.5"
+  }
+}
