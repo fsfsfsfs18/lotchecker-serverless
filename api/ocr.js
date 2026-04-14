@@ -1,62 +1,47 @@
-import vision from "@google-cloud/vision";
 import multer from "multer";
 
 const upload = multer();
 
-// Google Vision client via environment variables (Vercel)
-const client = new vision.ImageAnnotatorClient({
-  credentials: {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY
-  }
-});
-
-// Nodig voor Multer (anders crasht Vercel)
 export const config = {
-  api: {
-    bodyParser: false
-  }
+  api: { bodyParser: false }
 };
 
-export default function handler(req, res) {
-  // ------------------------------------
-  // CORS HEADERS (VERPLICHT VOOR GITHUB)
-  // ------------------------------------
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "https://fsfsfsfs18.github.io");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // Preflight request
-  if (req.method === "OPTIONS") {
-    res.status(200).end();
-    return;
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  // Alleen POST toegestaan
-  if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed" });
-    return;
-  }
-
-  // ------------------------------------
-  // Multer: image upload verwerken
-  // ------------------------------------
   upload.single("image")(req, {}, async (err) => {
-    if (err) {
-      console.error("Upload error:", err);
-      res.status(500).json({ error: "Upload failed" });
-      return;
-    }
+    if (err) return res.status(500).json({ error: "Upload failed" });
 
     try {
-      // Vision OCR uitvoeren
-      const [result] = await client.textDetection(req.file.buffer);
-      const detections = result.textAnnotations || [];
-      const text = detections.length ? detections[0].description : "";
+      const base64 = req.file.buffer.toString("base64");
+
+      const response = await fetch(
+        `https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            requests: [
+              {
+                image: { content: base64 },
+                features: [{ type: "TEXT_DETECTION" }]
+              }
+            ]
+          })
+        }
+      );
+
+      const data = await response.json();
+      const text = data.responses?.[0]?.fullTextAnnotation?.text || "";
 
       res.status(200).json({ text });
     } catch (e) {
-      console.error("Vision API error:", e);
+      console.error(e);
       res.status(500).json({ error: "OCR failed" });
     }
   });
