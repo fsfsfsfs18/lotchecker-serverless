@@ -3,8 +3,8 @@
   "functions": {
     "api/ocr.js": {
       "memory": 512,
-      "maxDuration": 10,
-      "includeFiles": "key.json"
+      "maxDuration": 10
     }
-  }
+  },
+  "outputDirectory": "."
 }
